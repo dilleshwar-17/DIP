@@ -4,11 +4,14 @@ import Sidebar from '../components/Sidebar';
 import TaskForm from '../components/TaskForm';
 import AnalyticsCharts from '../components/AnalyticsCharts';
 import KanbanBoard from '../components/KanbanBoard';
-import { Clock, CheckCircle, TrendingUp, Trash2, LayoutGrid, Calendar as CalendarIcon, ChevronRight, ChevronDown } from 'lucide-react';
+import { aiAPI } from '../services/api';
+import { Clock, CheckCircle, TrendingUp, Trash2, LayoutGrid, Calendar as CalendarIcon, ChevronRight, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
 
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [analytics, setAnalytics] = useState(null);
+  const [aiInsights, setAiInsights] = useState('');
+  const [isLoadingInsights, setIsLoadingInsights] = useState(false);
   const [timeframe, setTimeframe] = useState('weekly');
   const [view, setView] = useState('timetable'); // timetable or kanban
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -28,6 +31,19 @@ const Dashboard = () => {
       setAnalytics(analyticsRes.data);
     } catch (error) {
       console.error('Failed to fetch data', error);
+    }
+  };
+
+  const handleGetInsights = async () => {
+    if (!analytics) return;
+    setIsLoadingInsights(true);
+    try {
+      const res = await aiAPI.getInsights(analytics[timeframe]);
+      setAiInsights(res.data.insights);
+    } catch (error) {
+      console.error('Failed to get insights', error);
+    } finally {
+      setIsLoadingInsights(false);
     }
   };
 
@@ -176,6 +192,28 @@ const Dashboard = () => {
 
           <div className="mb-8">
             <AnalyticsCharts data={currentStats} title={timeframe.charAt(0).toUpperCase() + timeframe.slice(1)} />
+          </div>
+
+          <div className="mb-8 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 p-8 shadow-xl text-white">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <Sparkles className="text-yellow-300" />
+                  <h3 className="text-xl font-bold">AI Productivity Coach</h3>
+                </div>
+                <p className="text-indigo-100 text-sm leading-relaxed">
+                  {aiInsights || "Get personalized AI feedback on your performance and learn how to optimize your workflow."}
+                </p>
+              </div>
+              <button 
+                onClick={handleGetInsights}
+                disabled={isLoadingInsights}
+                className="flex-shrink-0 flex items-center gap-2 bg-white text-indigo-700 px-6 py-3 rounded-xl font-bold text-sm shadow-lg hover:bg-indigo-50 transition-all disabled:opacity-50"
+              >
+                {isLoadingInsights ? <Loader2 className="animate-spin" size={18} /> : <TrendingUp size={18} />}
+                {aiInsights ? 'Refresh Analysis' : 'Get AI Feedback'}
+              </button>
+            </div>
           </div>
 
           {view === 'kanban' ? (

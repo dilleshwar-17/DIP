@@ -27,4 +27,9 @@ export const taskAPI = {
   deleteTask: (id) => api.delete(`/tasks/${id}`),
 };
 
+export const aiAPI = {
+  suggestSubTasks: (title, category) => api.post('/ai/suggest-subtasks', { title, category }),
+  getInsights: (stats) => api.post('/ai/insights', { stats }),
+};
+
 export default api;

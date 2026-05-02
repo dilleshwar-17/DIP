@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, X, ListTodo, Tag as TagIcon, AlertCircle } from 'lucide-react';
+import { Plus, X, ListTodo, Tag as TagIcon, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
+import { aiAPI } from '../services/api';
 
 const TaskForm = ({ onSubmit }) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -13,6 +14,25 @@ const TaskForm = ({ onSubmit }) => {
   const [tags, setTags] = useState([]);
   const [subTaskInput, setSubTaskInput] = useState('');
   const [subTasks, setSubTasks] = useState([]);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+
+  const handleAiSuggest = async () => {
+    if (!notes && category === 'Other') return;
+    
+    setIsSuggesting(true);
+    try {
+      // Use notes if available, otherwise category
+      const title = notes || category;
+      const res = await aiAPI.suggestSubTasks(title, category);
+      const suggestions = res.data.map(title => ({ title, completed: false }));
+      setSubTasks([...subTasks, ...suggestions]);
+    } catch (error) {
+      console.error('AI Suggestion Failed:', error);
+      alert(error.response?.data?.error || 'Failed to get suggestions. Make sure GEMINI_API_KEY is configured.');
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
 
   const handleAddTag = (e) => {
     if (e.key === 'Enter' && tagInput.trim()) {
@@ -187,7 +207,18 @@ const TaskForm = ({ onSubmit }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Sub-tasks (Enter to add)</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Sub-tasks (Enter to add)</label>
+            <button
+              type="button"
+              onClick={handleAiSuggest}
+              disabled={isSuggesting}
+              className="flex items-center gap-2 px-3 py-1 rounded-lg bg-purple-50 text-purple-600 text-xs font-bold hover:bg-purple-100 transition-colors disabled:opacity-50 dark:bg-purple-900/30 dark:text-purple-400"
+            >
+              {isSuggesting ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+              {isSuggesting ? 'Thinking...' : 'AI Suggest Steps'}
+            </button>
+          </div>
           <div className="space-y-3">
             <div className="relative">
               <input
