@@ -167,23 +167,21 @@ const Dashboard = () => {
                 </div>
 
                 <div className="flex items-center gap-3 px-2">
-                  <div className={`p-1.5 rounded-lg ${notificationsEnabled ? 'text-green-600 bg-green-50 dark:bg-green-900/30' : 'text-gray-400 bg-gray-50 dark:bg-gray-700'}`}>
+                  <div className="p-1.5 rounded-lg text-green-600 bg-green-50 dark:bg-green-900/30">
                     <Bell size={16} />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold uppercase tracking-tight text-gray-500">
-                      {notificationsEnabled ? 'Reminders Active' : 'Notifications Off'}
+                      Reminders Active
                     </span>
-                    {notificationsEnabled && (
-                      <button 
-                        onClick={() => {
-                          new Notification('DevTrack Test', { body: 'Notifications are working correctly!', icon: '/logo192.png' });
-                        }}
-                        className="text-[9px] font-bold text-blue-600 hover:underline text-left"
-                      >
-                        Test Alert
-                      </button>
-                    )}
+                    <button 
+                      onClick={() => {
+                        new Notification('DevTrack System', { body: 'Notifications are active and monitoring your tasks.', icon: '/logo192.png' });
+                      }}
+                      className="text-[9px] font-bold text-blue-600 hover:underline text-left"
+                    >
+                      Test System
+                    </button>
                   </div>
                 </div>
 
