@@ -40,9 +40,12 @@ const getAnalytics = async (req, res) => {
     });
 
     const calculateStats = (filteredTasks, days) => {
-      const totalHours = filteredTasks.filter(t => t.status === 'COMPLETED').reduce((sum, task) => sum + task.hours, 0);
+      const totalHours = filteredTasks
+        .filter(t => ['COMPLETED', 'IN_PROGRESS', 'REVIEW'].includes(t.status))
+        .reduce((sum, task) => sum + task.hours, 0);
       const completedTasks = filteredTasks.filter(t => t.status === 'COMPLETED').length;
       const pendingTasks = filteredTasks.filter(t => t.status === 'PENDING').length;
+      const activeTasks = filteredTasks.filter(t => ['IN_PROGRESS', 'REVIEW'].includes(t.status)).length;
 
       const categoryBreakdown = {};
       filteredTasks.filter(t => t.status === 'COMPLETED').forEach(t => {
@@ -66,16 +69,18 @@ const getAnalytics = async (req, res) => {
       filteredTasks.forEach(t => {
         const dateStr = new Date(t.date).toISOString().split('T')[0];
         if (dailyData[dateStr]) {
-          if (t.status === 'COMPLETED') {
+          if (['COMPLETED', 'IN_PROGRESS', 'REVIEW'].includes(t.status)) {
             dailyData[dateStr].hours += t.hours;
-            dailyData[dateStr].completed += 1;
+            if (t.status === 'COMPLETED') {
+              dailyData[dateStr].completed += 1;
+            }
           }
         }
       });
 
       const historyTrend = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
 
-      return { totalHours, completedTasks, pendingTasks, categoryData, historyTrend };
+      return { totalHours, completedTasks, pendingTasks, activeTasks, categoryData, historyTrend };
     };
 
     const now = new Date();

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, X, ListTodo, Tag as TagIcon, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
+import { Plus, X, ListTodo, Tag as TagIcon, AlertCircle, Sparkles, Loader2, Edit2 } from 'lucide-react';
 import { aiAPI } from '../services/api';
 
-const TaskForm = ({ onSubmit }) => {
+const TaskForm = ({ onSubmit, editingTask, onCancelEdit }) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [startTime, setStartTime] = useState('');
   const [hours, setHours] = useState('');
@@ -15,6 +15,40 @@ const TaskForm = ({ onSubmit }) => {
   const [subTaskInput, setSubTaskInput] = useState('');
   const [subTasks, setSubTasks] = useState([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
+
+  React.useEffect(() => {
+    if (editingTask) {
+      setDate(new Date(editingTask.date).toISOString().split('T')[0]);
+      if (editingTask.startTime) {
+        const d = new Date(editingTask.startTime);
+        setStartTime(`${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`);
+      } else {
+        setStartTime('');
+      }
+      const h = Math.floor(editingTask.hours);
+      const m = Math.round((editingTask.hours - h) * 60);
+      setHours(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+      setCategory(editingTask.category);
+      setNotes(editingTask.notes || '');
+      setIsRoutine(editingTask.isRoutine);
+      setPriority(editingTask.priority);
+      setTags(editingTask.tags || []);
+      setSubTasks(editingTask.subTasks || []);
+    } else {
+      resetForm();
+    }
+  }, [editingTask]);
+
+  const resetForm = () => {
+    setHours('');
+    setNotes('');
+    setStartTime('');
+    setTags([]);
+    setSubTasks([]);
+    setIsRoutine(false);
+    setPriority('MEDIUM');
+    setDate(new Date().toISOString().split('T')[0]);
+  };
 
   const handleAiSuggest = async () => {
     if (!notes && category === 'Other') return;
@@ -88,14 +122,9 @@ const TaskForm = ({ onSubmit }) => {
       subTasks
     });
     
-    // Reset fields
-    setHours('');
-    setNotes('');
-    setStartTime('');
-    setTags([]);
-    setSubTasks([]);
-    setIsRoutine(false);
-    setPriority('MEDIUM');
+    if (!editingTask) {
+      resetForm();
+    }
   };
 
   const priorityColors = {
@@ -111,7 +140,9 @@ const TaskForm = ({ onSubmit }) => {
         <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
           <ListTodo size={24} />
         </div>
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Plan Your Next Goal</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          {editingTask ? 'Edit Your Goal' : 'Plan Your Next Goal'}
+        </h3>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -265,13 +296,24 @@ const TaskForm = ({ onSubmit }) => {
             <span className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-blue-600">Repeat as Daily Routine</span>
           </label>
 
-          <button
-            type="submit"
-            className="w-full sm:w-auto flex items-center justify-center gap-3 rounded-xl bg-blue-600 px-8 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] focus:outline-none"
-          >
-            <Plus size={20} />
-            Schedule Task
-          </button>
+          <div className="flex gap-3">
+            {editingTask && (
+              <button
+                type="button"
+                onClick={onCancelEdit}
+                className="w-full sm:w-auto px-8 py-3 text-sm font-bold text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              type="submit"
+              className="w-full sm:w-auto flex items-center justify-center gap-3 rounded-xl bg-blue-600 px-8 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] focus:outline-none"
+            >
+              {editingTask ? <Edit2 size={20} /> : <Plus size={20} />}
+              {editingTask ? 'Update Task' : 'Schedule Task'}
+            </button>
+          </div>
         </div>
 
       </form>

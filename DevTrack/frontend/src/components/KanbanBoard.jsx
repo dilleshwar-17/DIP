@@ -1,7 +1,8 @@
 import React from 'react';
-import { MoreVertical, CheckCircle2, Circle, Clock, AlertCircle } from 'lucide-react';
+import { MoreVertical, CheckCircle2, Circle, Clock, AlertCircle, Edit2, ChevronRight, ChevronLeft } from 'lucide-react';
 
-const KanbanBoard = ({ tasks, onToggleStatus, onDeleteTask }) => {
+const KanbanBoard = ({ tasks, onToggleStatus, onDeleteTask, onEditTask }) => {
+  const STATUS_ORDER = ['PENDING', 'IN_PROGRESS', 'REVIEW', 'COMPLETED'];
   const columns = [
     { id: 'PENDING', title: 'To Do', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
     { id: 'IN_PROGRESS', title: 'In Progress', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
@@ -86,7 +87,28 @@ const KanbanBoard = ({ tasks, onToggleStatus, onDeleteTask }) => {
                       {task.startTime ? new Date(task.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'No time'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    {task.status !== 'PENDING' && (
+                      <button 
+                        onClick={() => {
+                          const currentIndex = STATUS_ORDER.indexOf(task.status);
+                          onToggleStatus(task, STATUS_ORDER[currentIndex - 1]);
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-blue-500 transition-colors"
+                        title="Move Back"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                    )}
+                    
+                    <button 
+                      onClick={() => onEditTask(task)}
+                      className="p-1.5 text-gray-400 hover:text-blue-500 transition-colors"
+                      title="Edit Task"
+                    >
+                      <Edit2 size={14} />
+                    </button>
+
                     <button 
                       onClick={() => onToggleStatus(task)}
                       className={`p-1.5 rounded-lg transition-colors ${
@@ -94,12 +116,15 @@ const KanbanBoard = ({ tasks, onToggleStatus, onDeleteTask }) => {
                           ? 'bg-green-50 text-green-600 dark:bg-green-900/30' 
                           : 'bg-gray-50 text-gray-400 hover:text-blue-600 dark:bg-gray-700'
                       }`}
+                      title={task.status === 'COMPLETED' ? 'Completed' : 'Move Forward'}
                     >
-                      {task.status === 'COMPLETED' ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+                      {task.status === 'COMPLETED' ? <CheckCircle2 size={16} /> : <ChevronRight size={16} />}
                     </button>
+                    
                     <button 
                       onClick={() => onDeleteTask(task.id)}
                       className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+                      title="Delete Task"
                     >
                       <AlertCircle size={16} />
                     </button>

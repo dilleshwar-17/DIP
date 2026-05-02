@@ -6,7 +6,10 @@ import AnalyticsCharts from '../components/AnalyticsCharts';
 import KanbanBoard from '../components/KanbanBoard';
 import { aiAPI } from '../services/api';
 import NotificationService from '../services/NotificationService';
-import { Clock, CheckCircle, TrendingUp, Trash2, LayoutGrid, Calendar as CalendarIcon, ChevronRight, ChevronDown, Sparkles, Loader2, Bell, Activity } from 'lucide-react';
+import { Clock, CheckCircle, TrendingUp, Trash2, LayoutGrid, Calendar as CalendarIcon, ChevronRight, ChevronDown, Sparkles, Loader2, Bell, Activity, Edit2 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+
+const STATUS_ORDER = ['PENDING', 'IN_PROGRESS', 'REVIEW', 'COMPLETED'];
 
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
@@ -19,6 +22,7 @@ const Dashboard = () => {
   const [expandedTasks, setExpandedTasks] = useState([]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
 
   useEffect(() => {
     const initNotifications = async () => {
@@ -66,10 +70,15 @@ const Dashboard = () => {
 
   const handleAddTask = async (taskData) => {
     try {
-      await taskAPI.createTask(taskData);
+      if (editingTask) {
+        await taskAPI.updateTask(editingTask.id, taskData);
+        setEditingTask(null);
+      } else {
+        await taskAPI.createTask(taskData);
+      }
       fetchData(); // Refresh data
     } catch (error) {
-      console.error('Failed to create task', error);
+      console.error('Failed to save task', error);
     }
   };
 
@@ -82,24 +91,42 @@ const Dashboard = () => {
     }
   };
 
-  const handleToggleStatus = async (task) => {
+  const handleToggleStatus = async (task, forcedStatus = null) => {
+    const currentIndex = STATUS_ORDER.indexOf(task.status);
+    const nextStatus = forcedStatus || STATUS_ORDER[(currentIndex + 1) % STATUS_ORDER.length];
+    
+    // Optimistic Update
+    const oldTasks = [...tasks];
+    setTasks(tasks.map(t => t.id === task.id ? { ...t, status: nextStatus } : t));
+
     try {
-      const newStatus = task.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED';
-      await taskAPI.updateTask(task.id, { status: newStatus });
+      await taskAPI.updateTask(task.id, { status: nextStatus });
       fetchData();
     } catch (error) {
+      setTasks(oldTasks); // Rollback on error
       console.error('Failed to update task status', error);
     }
   };
 
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleToggleSubTask = async (task, subTaskId) => {
+    // Optimistic Update
+    const oldTasks = [...tasks];
+    const updatedSubTasks = task.subTasks.map(st => 
+      st.id === subTaskId ? { ...st, completed: !st.completed } : st
+    );
+    setTasks(tasks.map(t => t.id === task.id ? { ...t, subTasks: updatedSubTasks } : t));
+
     try {
-      const updatedSubTasks = task.subTasks.map(st => 
-        st.id === subTaskId ? { ...st, completed: !st.completed } : st
-      );
       await taskAPI.updateTask(task.id, { subTasks: updatedSubTasks });
       fetchData();
     } catch (error) {
+      setTasks(oldTasks); // Rollback
       console.error('Failed to update subtask', error);
     }
   };
@@ -247,7 +274,11 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <TaskForm onSubmit={handleAddTask} />
+          <TaskForm 
+            onSubmit={handleAddTask} 
+            editingTask={editingTask} 
+            onCancelEdit={() => setEditingTask(null)} 
+          />
 
           <div className="mb-8">
             <AnalyticsCharts data={currentStats} title={timeframe.charAt(0).toUpperCase() + timeframe.slice(1)} />
@@ -280,6 +311,7 @@ const Dashboard = () => {
               tasks={tasks} 
               onToggleStatus={handleToggleStatus} 
               onDeleteTask={handleDeleteTask} 
+              onEditTask={handleEditTask}
             />
           ) : (
             <div className="rounded-2xl bg-white shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700 overflow-hidden">
@@ -369,12 +401,20 @@ const Dashboard = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <button
-                              onClick={() => handleDeleteTask(task.id)}
-                              className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                            >
-                              <Trash2 size={18} />
-                            </button>
+                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => handleEditTask(task)}
+                                className="p-2 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                              >
+                                <Edit2 size={18} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTask(task.id)}
+                                className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                         {expandedTasks.includes(task.id) && task.subTasks?.length > 0 && (
@@ -439,9 +479,14 @@ const Dashboard = () => {
                           </div>
                         </div>
                       </div>
-                      <button onClick={() => handleDeleteTask(task.id)} className="text-gray-400 p-1">
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleEditTask(task)} className="text-gray-400 p-1">
+                          <Edit2 size={16} />
+                        </button>
+                        <button onClick={() => handleDeleteTask(task.id)} className="text-gray-400 p-1">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
 
                     {task.notes && (
