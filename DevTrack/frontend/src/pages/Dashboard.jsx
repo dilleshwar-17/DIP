@@ -203,11 +203,19 @@ const Dashboard = () => {
                     </span>
                     <button 
                       onClick={() => {
-                        new Notification('DevTrack System', { body: 'Notifications are active and monitoring your tasks.', icon: '/logo192.png' });
+                        const testTask = {
+                          id: 'test-id',
+                          category: 'Test System',
+                          notes: 'Notification scheduling is working correctly!',
+                          startTime: new Date(Date.now() + 5 * 60 * 1000 + 5000).toISOString(), // 5 mins (reminder offset) + 5 seconds
+                          status: 'PENDING'
+                        };
+                        NotificationService.scheduleTaskReminder(testTask);
+                        alert('Test notification scheduled for 5 seconds from now. You can minimize the window to test background support.');
                       }}
                       className="text-[9px] font-bold text-blue-600 hover:underline text-left"
                     >
-                      Test System
+                      Test Scheduling
                     </button>
                   </div>
                 </div>
