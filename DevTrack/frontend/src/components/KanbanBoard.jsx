@@ -3,20 +3,21 @@ import { MoreVertical, CheckCircle2, Circle, Clock, AlertCircle } from 'lucide-r
 
 const KanbanBoard = ({ tasks, onToggleStatus, onDeleteTask }) => {
   const columns = [
-    { id: 'PENDING', title: 'To Do', color: 'bg-gray-100 text-gray-700' },
-    { id: 'IN_PROGRESS', title: 'In Progress', color: 'bg-blue-100 text-blue-700' },
-    { id: 'REVIEW', title: 'Review', color: 'bg-purple-100 text-purple-700' },
-    { id: 'COMPLETED', title: 'Completed', color: 'bg-green-100 text-green-700' },
+    { id: 'PENDING', title: 'To Do', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
+    { id: 'IN_PROGRESS', title: 'In Progress', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
+    { id: 'REVIEW', title: 'Review', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' },
+    { id: 'COMPLETED', title: 'Completed', color: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
   ];
 
   const getPriorityColor = (p) => {
     switch (p) {
-      case 'URGENT': return 'bg-red-100 text-red-700 border-red-200';
-      case 'HIGH': return 'bg-orange-100 text-orange-700 border-orange-200';
-      case 'MEDIUM': return 'bg-blue-100 text-blue-700 border-blue-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'URGENT': return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800';
+      case 'HIGH': return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800';
+      case 'MEDIUM': return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700';
     }
   };
+
 
   const calculateProgress = (task) => {
     if (!task.subTasks || task.subTasks.length === 0) return task.status === 'COMPLETED' ? 100 : 0;

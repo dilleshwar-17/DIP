@@ -42,10 +42,14 @@ class NotificationService {
       });
     } else if ('Notification' in window && Notification.permission === 'granted') {
       const timeout = reminderTime.getTime() - Date.now();
-      setTimeout(() => {
-        new Notification(title, { body, icon: '/logo192.png' });
-      }, timeout);
+      // Ensure timeout is positive and reasonable
+      if (timeout > 0 && timeout < 24 * 60 * 60 * 1000) {
+        setTimeout(() => {
+          new Notification(title, { body, icon: '/logo192.png', badge: '/logo192.png' });
+        }, timeout);
+      }
     }
+
   }
 
   async scheduleAllReminders(tasks) {

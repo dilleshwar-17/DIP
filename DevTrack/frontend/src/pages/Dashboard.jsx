@@ -18,6 +18,7 @@ const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [expandedTasks, setExpandedTasks] = useState([]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const initNotifications = async () => {
@@ -116,16 +117,31 @@ const Dashboard = () => {
   };
 
   return (
-    <div className={`flex h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200 overflow-hidden`}>
-      <Sidebar />
+    <div className={`flex h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200 overflow-hidden`}>
+      <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       
-      <main className="flex-1 overflow-y-auto p-8">
-        <div className="mx-auto max-w-6xl">
-          <header className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h2>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage your daily routine and track progress.</p>
+      <main className="flex-1 overflow-y-auto">
+        <div className="p-4 md:p-8 mx-auto max-w-7xl">
+          <header className="mb-8">
+            <div className="flex items-center justify-between mb-6 lg:hidden">
+              <div className="flex items-center gap-2 text-blue-600">
+                <Activity size={24} />
+                <span className="font-black tracking-tighter text-xl">DevTrack</span>
+              </div>
+              <button 
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300"
+              >
+                <LayoutGrid size={20} />
+              </button>
             </div>
+
+            <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight">Dashboard</h2>
+                <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">Personalized productivity management suite.</p>
+              </div>
+
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
                 <button 
@@ -144,14 +160,27 @@ const Dashboard = () => {
                 </button>
               </div>
 
-              <div className="flex items-center gap-2 px-2">
+              <div className="flex items-center gap-3 px-2">
                 <div className={`p-1.5 rounded-lg ${notificationsEnabled ? 'text-green-600 bg-green-50 dark:bg-green-900/30' : 'text-gray-400 bg-gray-50 dark:bg-gray-700'}`}>
                   <Bell size={16} />
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-tight text-gray-500">
-                  {notificationsEnabled ? 'Reminders Active' : 'Notifications Off'}
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-tight text-gray-500">
+                    {notificationsEnabled ? 'Reminders Active' : 'Notifications Off'}
+                  </span>
+                  {notificationsEnabled && (
+                    <button 
+                      onClick={() => {
+                        new Notification('DevTrack Test', { body: 'Notifications are working correctly!', icon: '/logo192.png' });
+                      }}
+                      className="text-[9px] font-bold text-blue-600 hover:underline text-left"
+                    >
+                      Test Alert
+                    </button>
+                  )}
+                </div>
               </div>
+
 
               <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
 
@@ -247,13 +276,15 @@ const Dashboard = () => {
             />
           ) : (
             <div className="rounded-2xl bg-white shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700 overflow-hidden">
-              <div className="p-6 border-b border-gray-50 dark:border-gray-700 flex justify-between items-center">
+              <div className="p-4 md:p-6 border-b border-gray-50 dark:border-gray-700 flex justify-between items-center">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Daily Timetable</h3>
-                <span className="px-3 py-1 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full text-xs font-bold">
-                  {tasks.length} Tasks Scheduled
+                <span className="px-3 py-1 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full text-[10px] font-black uppercase">
+                  {tasks.length} Tasks
                 </span>
               </div>
-              <div className="overflow-x-auto">
+              
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left">
                   <thead className="bg-gray-50 dark:bg-gray-900/50 text-[10px] uppercase font-bold text-gray-400 tracking-widest">
                     <tr>
@@ -362,23 +393,111 @@ const Dashboard = () => {
                         )}
                       </React.Fragment>
                     ))}
-                    {tasks.length === 0 && (
-                      <tr>
-                        <td colSpan="5" className="px-6 py-20 text-center">
-                          <div className="flex flex-col items-center gap-4">
-                            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-full">
-                              <LayoutGrid size={48} className="text-gray-300 dark:text-gray-600" />
-                            </div>
-                            <p className="text-gray-500 dark:text-gray-400 font-medium">No tasks found for this date. Start planning!</p>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden divide-y divide-gray-50 dark:divide-gray-700">
+                {tasks.map((task) => (
+                  <div key={task.id} className="p-4 space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => handleToggleStatus(task)}
+                          className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all ${
+                            task.status === 'COMPLETED'
+                              ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 shadow-sm'
+                              : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                          }`}
+                        >
+                          <CheckCircle size={20} />
+                        </button>
+                        <div>
+                          <h4 className={`font-bold text-gray-900 dark:text-white ${task.status === 'COMPLETED' ? 'line-through opacity-50' : ''}`}>
+                            {task.category}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                              task.priority === 'URGENT' ? 'bg-red-100 text-red-600' :
+                              task.priority === 'HIGH' ? 'bg-orange-100 text-orange-600' :
+                              'bg-blue-100 text-blue-600'
+                            }`}>
+                              {task.priority}
+                            </span>
+                            <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
+                              <Clock size={10} />
+                              {task.startTime ? new Date(task.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <button onClick={() => handleDeleteTask(task.id)} className="text-gray-400 p-1">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+
+                    {task.notes && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed px-1">
+                        {task.notes}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 max-w-[150px]">
+                        <div className="flex justify-between items-center text-[9px] font-bold text-gray-400 mb-1">
+                          <span>Progress</span>
+                          <span>{calculateTaskProgress(task)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1 overflow-hidden">
+                          <div className="bg-blue-600 h-1 rounded-full" style={{ width: `${calculateTaskProgress(task)}%` }}></div>
+                        </div>
+                      </div>
+                      {task.subTasks?.length > 0 && (
+                        <button 
+                          onClick={() => toggleExpand(task.id)}
+                          className="flex items-center gap-1 text-[10px] font-bold text-blue-600 px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/30"
+                        >
+                          {task.subTasks.length} Steps
+                          {expandedTasks.includes(task.id) ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                        </button>
+                      )}
+                    </div>
+
+                    {expandedTasks.includes(task.id) && task.subTasks?.length > 0 && (
+                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3 space-y-2">
+                        {task.subTasks.map(st => (
+                          <div key={st.id} className="flex items-center gap-3">
+                            <input 
+                              type="checkbox" 
+                              checked={st.completed}
+                              onChange={() => handleToggleSubTask(task, st.id)}
+                              className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 dark:bg-gray-700 dark:border-gray-600"
+                            />
+                            <span className={`text-xs ${st.completed ? 'line-through text-gray-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                              {st.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {tasks.length === 0 && (
+                <div className="px-6 py-20 text-center">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-full text-gray-300 dark:text-gray-600">
+                      <LayoutGrid size={48} />
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">No tasks found. Start planning!</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
+
 
         </div>
       </main>
