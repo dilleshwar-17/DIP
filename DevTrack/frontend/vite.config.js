@@ -10,12 +10,29 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      includeAssets: ['favicon.svg', 'logo192.png', 'pwa-192x192.png'],
       manifest: {
-        name: 'DevTrack - Smart Study Tracker',
+        name: 'DevTrack - Productivity Suite',
         short_name: 'DevTrack',
-        description: 'Track your daily study progress and coding tasks',
-        theme_color: '#3b82f6'
+        description: 'Professional grade productivity and study tracker',
+        theme_color: '#2563eb',
+        background_color: '#ffffff',
+        display: 'standalone',
+        icons: [
+          {
+            src: 'logo192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any maskable'
+          },
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          }
+        ]
       }
     })
+
   ],
 })

@@ -6,7 +6,7 @@ import AnalyticsCharts from '../components/AnalyticsCharts';
 import KanbanBoard from '../components/KanbanBoard';
 import { aiAPI } from '../services/api';
 import NotificationService from '../services/NotificationService';
-import { Clock, CheckCircle, TrendingUp, Trash2, LayoutGrid, Calendar as CalendarIcon, ChevronRight, ChevronDown, Sparkles, Loader2, Bell } from 'lucide-react';
+import { Clock, CheckCircle, TrendingUp, Trash2, LayoutGrid, Calendar as CalendarIcon, ChevronRight, ChevronDown, Sparkles, Loader2, Bell, Activity } from 'lucide-react';
 
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
@@ -117,7 +117,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className={`flex h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200 overflow-hidden`}>
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200 overflow-hidden">
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       
       <main className="flex-1 overflow-y-auto">
@@ -142,70 +142,73 @@ const Dashboard = () => {
                 <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">Personalized productivity management suite.</p>
               </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-              <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                <button 
-                  onClick={() => setView('timetable')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${view === 'timetable' ? 'bg-white dark:bg-gray-600 text-blue-600 shadow-sm' : 'text-gray-500'}`}
-                >
-                  <CalendarIcon size={14} />
-                  Timetable
-                </button>
-                <button 
-                  onClick={() => setView('kanban')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${view === 'kanban' ? 'bg-white dark:bg-gray-600 text-blue-600 shadow-sm' : 'text-gray-500'}`}
-                >
-                  <LayoutGrid size={14} />
-                  Kanban
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3 px-2">
-                <div className={`p-1.5 rounded-lg ${notificationsEnabled ? 'text-green-600 bg-green-50 dark:bg-green-900/30' : 'text-gray-400 bg-gray-50 dark:bg-gray-700'}`}>
-                  <Bell size={16} />
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                  <button 
+                    onClick={() => setView('timetable')}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${view === 'timetable' ? 'bg-white dark:bg-gray-600 text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                  >
+                    <CalendarIcon size={14} />
+                    Timetable
+                  </button>
+                  <button 
+                    onClick={() => setView('kanban')}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${view === 'kanban' ? 'bg-white dark:bg-gray-600 text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                  >
+                    <LayoutGrid size={14} />
+                    Kanban
+                  </button>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold uppercase tracking-tight text-gray-500">
-                    {notificationsEnabled ? 'Reminders Active' : 'Notifications Off'}
-                  </span>
-                  {notificationsEnabled && (
-                    <button 
-                      onClick={() => {
-                        new Notification('DevTrack Test', { body: 'Notifications are working correctly!', icon: '/logo192.png' });
-                      }}
-                      className="text-[9px] font-bold text-blue-600 hover:underline text-left"
-                    >
-                      Test Alert
-                    </button>
-                  )}
+
+                <div className="flex items-center gap-3 px-2">
+                  <div className={`p-1.5 rounded-lg ${notificationsEnabled ? 'text-green-600 bg-green-50 dark:bg-green-900/30' : 'text-gray-400 bg-gray-50 dark:bg-gray-700'}`}>
+                    <Bell size={16} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase tracking-tight text-gray-500">
+                      {notificationsEnabled ? 'Reminders Active' : 'Notifications Off'}
+                    </span>
+                    {notificationsEnabled && (
+                      <button 
+                        onClick={() => {
+                          new Notification('DevTrack Test', { body: 'Notifications are working correctly!', icon: '/logo192.png' });
+                        }}
+                        className="text-[9px] font-bold text-blue-600 hover:underline text-left"
+                      >
+                        Test Alert
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
 
+                <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
 
-              <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="border-none bg-transparent text-sm font-bold text-gray-900 dark:text-white focus:ring-0 cursor-pointer"
-                  />
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="border-none bg-transparent text-sm font-bold text-gray-900 dark:text-white focus:ring-0 cursor-pointer"
+                    />
+                  </div>
+                  <select
+                    value={timeframe}
+                    onChange={(e) => setTimeframe(e.target.value)}
+                    className="bg-transparent border-none text-xs font-bold text-blue-600 dark:text-blue-400 focus:ring-0 cursor-pointer"
+                  >
+                    <option value="weekly">Weekly</option>
+                    <option value="fortnightly">Fortnightly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="overall">Overall</option>
+                  </select>
                 </div>
-                <select
-                  value={timeframe}
-                  onChange={(e) => setTimeframe(e.target.value)}
-                  className="bg-transparent border-none text-xs font-bold text-blue-600 dark:text-blue-400 focus:ring-0 cursor-pointer"
-                >
-                  <option value="weekly">Weekly</option>
-                  <option value="fortnightly">Fortnightly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="overall">Overall</option>
-                </select>
               </div>
             </div>
           </header>
+
+
+
 
           {/* Stats Cards */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
