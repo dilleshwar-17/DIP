@@ -19,6 +19,7 @@ const getTasks = async (req, res) => {
 
     const tasks = await prisma.task.findMany({
       where,
+      include: { subTasks: true },
       orderBy: [
         { date: 'asc' },
         { startTime: 'asc' }
@@ -100,7 +101,7 @@ const getAnalytics = async (req, res) => {
 const createTask = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { date, startTime, hours, category, notes, isRoutine } = req.body;
+    const { date, startTime, hours, category, notes, isRoutine, priority, tags, subTasks } = req.body;
 
     if (!date || hours === undefined || !category) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -115,8 +116,14 @@ const createTask = async (req, res) => {
         category,
         notes,
         isRoutine: !!isRoutine,
-        status: 'PENDING'
-      }
+        priority: priority || 'MEDIUM',
+        tags: tags || [],
+        status: 'PENDING',
+        subTasks: {
+          create: subTasks?.map(st => ({ title: st.title })) || []
+        }
+      },
+      include: { subTasks: true }
     });
     res.status(201).json(task);
   } catch (error) {
@@ -129,11 +136,23 @@ const updateTask = async (req, res) => {
   try {
     const userId = req.user.userId;
     const taskId = req.params.id;
-    const { date, startTime, hours, category, notes, status, isRoutine } = req.body;
+    const { date, startTime, hours, category, notes, status, isRoutine, priority, tags, subTasks } = req.body;
 
-    const existingTask = await prisma.task.findUnique({ where: { id: taskId } });
+    const existingTask = await prisma.task.findUnique({ 
+      where: { id: taskId },
+      include: { subTasks: true }
+    });
+    
     if (!existingTask || existingTask.userId !== userId) {
       return res.status(404).json({ error: 'Task not found or unauthorized' });
+    }
+
+    // Automation: If status is set to COMPLETED, ensure all subtasks are COMPLETED too
+    let finalStatus = status || existingTask.status;
+    let finalSubTasks = subTasks;
+    
+    if (status === 'COMPLETED') {
+      // Logic for automatic subtask completion could go here
     }
 
     const updatedTask = await prisma.task.update({
@@ -144,9 +163,17 @@ const updateTask = async (req, res) => {
         hours: hours !== undefined ? parseFloat(hours) : existingTask.hours,
         category: category || existingTask.category,
         notes: notes !== undefined ? notes : existingTask.notes,
-        status: status || existingTask.status,
-        isRoutine: isRoutine !== undefined ? !!isRoutine : existingTask.isRoutine
-      }
+        status: finalStatus,
+        isRoutine: isRoutine !== undefined ? !!isRoutine : existingTask.isRoutine,
+        priority: priority || existingTask.priority,
+        tags: tags !== undefined ? tags : existingTask.tags,
+        // For subtasks, we use a slightly more complex update if they are provided
+        subTasks: subTasks ? {
+          deleteMany: {}, // Simplest way: clear and recreate, or we can map IDs
+          create: subTasks.map(st => ({ title: st.title, completed: !!st.completed }))
+        } : undefined
+      },
+      include: { subTasks: true }
     });
 
     res.status(200).json(updatedTask);

@@ -7,6 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Priority {
+  URGENT
+  HIGH
+  MEDIUM
+  LOW
+}
+
 model User {
   id        String   @id @default(uuid())
   name      String
@@ -17,17 +24,29 @@ model User {
 }
 
 model Task {
-  id        String   @id @default(uuid())
-  date      DateTime
-  startTime DateTime?
-  hours     Float
-  category  String   // 'DSA', 'Python', 'Project', 'Other'
-  status    String   @default("PENDING") // 'PENDING', 'COMPLETED', 'MISSED'
-  isRoutine Boolean  @default(false)
-  reminderSent Boolean @default(false)
-  notes     String?
-  createdAt DateTime @default(now())
+  id           String    @id @default(uuid())
+  date         DateTime
+  startTime    DateTime?
+  hours        Float
+  category     String   // 'DSA', 'Python', 'Project', 'Other'
+  status       String    @default("PENDING") // 'PENDING', 'IN_PROGRESS', 'REVIEW', 'COMPLETED', 'MISSED'
+  isRoutine    Boolean   @default(false)
+  reminderSent Boolean   @default(false)
+  notes        String?
+  priority     Priority  @default(MEDIUM)
+  tags         String[]  @default([])
+  subTasks     SubTask[]
+  createdAt    DateTime  @default(now())
   
   user      User     @relation(fields: [userId], references: [id])
   userId    String
+}
+
+model SubTask {
+  id        String   @id @default(uuid())
+  title     String
+  completed Boolean  @default(false)
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
