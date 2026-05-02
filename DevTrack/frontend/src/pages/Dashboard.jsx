@@ -9,31 +9,11 @@ const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [timeframe, setTimeframe] = useState('weekly');
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
-    // Check system preference or local storage for theme
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark');
-    }
-
     fetchData();
   }, [selectedDate]);
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    if (!isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
 
   const fetchData = async () => {
     try {
@@ -79,8 +59,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div className={`flex h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200 overflow-hidden ${isDarkMode ? 'dark' : ''}`}>
-      <Sidebar toggleTheme={toggleTheme} isDarkMode={isDarkMode} />
+    <div className={`flex h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200 overflow-hidden`}>
+      <Sidebar />
       
       <main className="flex-1 overflow-y-auto p-8">
         <div className="mx-auto max-w-6xl">

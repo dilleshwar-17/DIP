@@ -1,9 +1,14 @@
 @import "tailwindcss";
 
 @layer base {
+  * {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  }
+  
   body {
     @apply bg-white text-gray-900;
   }
+  
   .dark body {
     @apply bg-gray-900 text-white;
   }
