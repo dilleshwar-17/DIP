@@ -8,6 +8,7 @@ import { Clock, CheckCircle, TrendingUp, Trash2 } from 'lucide-react';
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [analytics, setAnalytics] = useState(null);
+  const [timeframe, setTimeframe] = useState('weekly');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -46,6 +47,8 @@ const Dashboard = () => {
       console.error('Failed to fetch data', error);
     }
   };
+
+  const currentStats = analytics ? analytics[timeframe] : null;
 
   const handleAddTask = async (taskData) => {
     try {
@@ -86,14 +89,29 @@ const Dashboard = () => {
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h2>
               <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage your daily routine and track progress.</p>
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">View Date:</label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-              />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">View Date:</label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Analyze:</label>
+                <select
+                  value={timeframe}
+                  onChange={(e) => setTimeframe(e.target.value)}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="weekly">Weekly</option>
+                  <option value="fortnightly">Fortnightly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="overall">Overall</option>
+                </select>
+              </div>
             </div>
           </header>
 
@@ -105,7 +123,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Study Hours</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{analytics?.totalHours?.toFixed(1) || 0}h</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{currentStats?.totalHours?.toFixed(1) || 0}h</p>
               </div>
             </div>
 
@@ -115,7 +133,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tasks Completed</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{analytics?.completedTasks || 0}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{currentStats?.completedTasks || 0}</p>
               </div>
             </div>
 
@@ -125,14 +143,14 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Tasks</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{analytics?.pendingTasks || 0}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{currentStats?.pendingTasks || 0}</p>
               </div>
             </div>
           </div>
 
           <TaskForm onSubmit={handleAddTask} />
 
-          <AnalyticsCharts data={analytics} />
+          <AnalyticsCharts data={currentStats} title={timeframe.charAt(0).toUpperCase() + timeframe.slice(1)} />
 
           {/* Timetable / Task List */}
           <div className="mt-8 rounded-xl bg-white shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700 overflow-hidden">

@@ -38,49 +38,58 @@ const getAnalytics = async (req, res) => {
       where: { userId }
     });
 
-    const totalHours = tasks.filter(t => t.status === 'COMPLETED').reduce((sum, task) => sum + task.hours, 0);
-    const completedTasks = tasks.filter(t => t.status === 'COMPLETED').length;
-    const pendingTasks = tasks.filter(t => t.status === 'PENDING').length;
+    const calculateStats = (filteredTasks, days) => {
+      const totalHours = filteredTasks.filter(t => t.status === 'COMPLETED').reduce((sum, task) => sum + task.hours, 0);
+      const completedTasks = filteredTasks.filter(t => t.status === 'COMPLETED').length;
+      const pendingTasks = filteredTasks.filter(t => t.status === 'PENDING').length;
 
-    // Category breakdown (for completed tasks)
-    const categoryBreakdown = {};
-    tasks.filter(t => t.status === 'COMPLETED').forEach(t => {
-      categoryBreakdown[t.category] = (categoryBreakdown[t.category] || 0) + t.hours;
-    });
+      const categoryBreakdown = {};
+      filteredTasks.filter(t => t.status === 'COMPLETED').forEach(t => {
+        categoryBreakdown[t.category] = (categoryBreakdown[t.category] || 0) + t.hours;
+      });
 
-    const categoryData = Object.keys(categoryBreakdown).map(key => ({
-      name: key,
-      value: categoryBreakdown[key]
-    }));
+      const categoryData = Object.keys(categoryBreakdown).map(key => ({
+        name: key,
+        value: categoryBreakdown[key]
+      }));
 
-    // Daily trend (last 14 days)
-    const dailyData = {};
-    const now = new Date();
-    for (let i = 0; i < 14; i++) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      dailyData[dateStr] = { date: dateStr, hours: 0, completed: 0 };
-    }
-
-    tasks.forEach(t => {
-      const dateStr = new Date(t.date).toISOString().split('T')[0];
-      if (dailyData[dateStr]) {
-        if (t.status === 'COMPLETED') {
-          dailyData[dateStr].hours += t.hours;
-          dailyData[dateStr].completed += 1;
-        }
+      const dailyData = {};
+      const now = new Date();
+      for (let i = 0; i < days; i++) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        dailyData[dateStr] = { date: dateStr, hours: 0, completed: 0 };
       }
-    });
 
-    const historyTrend = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
+      filteredTasks.forEach(t => {
+        const dateStr = new Date(t.date).toISOString().split('T')[0];
+        if (dailyData[dateStr]) {
+          if (t.status === 'COMPLETED') {
+            dailyData[dateStr].hours += t.hours;
+            dailyData[dateStr].completed += 1;
+          }
+        }
+      });
+
+      const historyTrend = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
+
+      return { totalHours, completedTasks, pendingTasks, categoryData, historyTrend };
+    };
+
+    const now = new Date();
+    
+    const getTasksSince = (days) => {
+      const since = new Date(now);
+      since.setDate(since.getDate() - days);
+      return tasks.filter(t => new Date(t.date) >= since);
+    };
 
     res.status(200).json({
-      totalHours,
-      completedTasks,
-      pendingTasks,
-      categoryData,
-      historyTrend
+      weekly: calculateStats(getTasksSince(7), 7),
+      fortnightly: calculateStats(getTasksSince(14), 14),
+      monthly: calculateStats(getTasksSince(30), 30),
+      overall: calculateStats(tasks, 90) // Using 90 days for trend in overall
     });
   } catch (error) {
     console.error('Analytics Error:', error);

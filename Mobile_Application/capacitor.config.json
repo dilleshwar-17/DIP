@@ -1,0 +1,5 @@
+{
+  "appId": "com.devtrack.app",
+  "appName": "DevTrack",
+  "webDir": "../DevTrack/frontend/dist"
+}

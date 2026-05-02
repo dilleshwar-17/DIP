@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DevTrack</string>
+    <string name="title_activity_main">DevTrack</string>
+    <string name="package_name">com.devtrack.app</string>
+    <string name="custom_url_scheme">com.devtrack.app</string>
+</resources>

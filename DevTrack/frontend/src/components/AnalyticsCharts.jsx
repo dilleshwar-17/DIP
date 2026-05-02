@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#6366f1', '#ec4899'];
 
-const AnalyticsCharts = ({ data }) => {
+const AnalyticsCharts = ({ data, title }) => {
   if (!data) return null;
 
   const { categoryData, historyTrend } = data;
@@ -13,7 +13,7 @@ const AnalyticsCharts = ({ data }) => {
       
       {/* Category Breakdown Pie Chart */}
       <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Hours by Category</h3>
+        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Hours by Category ({title})</h3>
         <div className="h-64">
           {categoryData && categoryData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
@@ -37,7 +37,7 @@ const AnalyticsCharts = ({ data }) => {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-gray-500 dark:text-gray-400">No data available</div>
+            <div className="flex h-full items-center justify-center text-sm text-gray-500 dark:text-gray-400">No data available for this period</div>
           )}
         </div>
         <div className="flex flex-wrap justify-center gap-4 mt-4">
@@ -52,12 +52,19 @@ const AnalyticsCharts = ({ data }) => {
 
       {/* History Trend Bar Chart */}
       <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">14-Day Progress History</h3>
+        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{title} Progress History</h3>
         <div className="h-64">
           {historyTrend && historyTrend.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={historyTrend}>
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 10 }} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickFormatter={(val) => val.split('-').slice(1).join('/')}
+                  interval={historyTrend.length > 14 ? 4 : 0} 
+                />
                 <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                 <Tooltip 
                   cursor={{ fill: 'rgba(0,0,0,0.05)' }}
