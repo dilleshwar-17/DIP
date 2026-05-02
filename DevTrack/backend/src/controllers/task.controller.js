@@ -8,9 +8,9 @@ const getTasks = async (req, res) => {
     const where = { userId };
     if (date) {
       const start = new Date(date);
-      start.setHours(0, 0, 0, 0);
+      start.setUTCHours(0, 0, 0, 0);
       const end = new Date(date);
-      end.setHours(23, 59, 59, 999);
+      end.setUTCHours(23, 59, 59, 999);
       where.date = {
         gte: start,
         lte: end
