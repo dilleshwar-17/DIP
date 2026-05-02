@@ -5,10 +5,12 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import NotificationManager from './components/NotificationManager';
 
 function App() {
   return (
     <AuthProvider>
+      <NotificationManager />
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />

@@ -20,7 +20,7 @@ export const authAPI = {
 };
 
 export const taskAPI = {
-  getTasks: () => api.get('/tasks'),
+  getTasks: (date) => api.get(`/tasks${date ? `?date=${date}` : ''}`),
   getAnalytics: () => api.get('/tasks/analytics'),
   createTask: (data) => api.post('/tasks', data),
   updateTask: (id, data) => api.put(`/tasks/${id}`, data),

@@ -19,8 +19,12 @@ model User {
 model Task {
   id        String   @id @default(uuid())
   date      DateTime
+  startTime DateTime?
   hours     Float
   category  String   // 'DSA', 'Python', 'Project', 'Other'
+  status    String   @default("PENDING") // 'PENDING', 'COMPLETED', 'MISSED'
+  isRoutine Boolean  @default(false)
+  reminderSent Boolean @default(false)
   notes     String?
   createdAt DateTime @default(now())
   

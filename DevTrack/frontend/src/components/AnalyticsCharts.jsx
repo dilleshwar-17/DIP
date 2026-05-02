@@ -6,7 +6,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#6366f1', '#ec4899'];
 const AnalyticsCharts = ({ data }) => {
   if (!data) return null;
 
-  const { categoryData, weeklyTrend } = data;
+  const { categoryData, historyTrend } = data;
 
   return (
     <div className="grid gap-6 lg:grid-cols-2 mt-6">
@@ -44,30 +44,32 @@ const AnalyticsCharts = ({ data }) => {
           {categoryData?.map((entry, index) => (
             <div key={entry.name} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-              <span>{entry.name} ({entry.value}h)</span>
+              <span>{entry.name} ({entry.value.toFixed(1)}h)</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Weekly Trend Bar Chart */}
+      {/* History Trend Bar Chart */}
       <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Past 7 Days Trend</h3>
+        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">14-Day Progress History</h3>
         <div className="h-64">
-          {weeklyTrend && weeklyTrend.length > 0 ? (
+          {historyTrend && historyTrend.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyTrend}>
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+              <BarChart data={historyTrend}>
+                <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
                 <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                 <Tooltip 
                   cursor={{ fill: 'rgba(0,0,0,0.05)' }}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  formatter={(value, name) => [name === 'hours' ? `${value.toFixed(1)}h` : value, name === 'hours' ? 'Study Hours' : 'Tasks Done']}
                 />
                 <Bar dataKey="hours" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="completed" fill="#10b981" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-gray-500 dark:text-gray-400">No data available</div>
+            <div className="flex h-full items-center justify-center text-sm text-gray-500 dark:text-gray-400">No history data available</div>
           )}
         </div>
       </div>
