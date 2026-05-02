@@ -116,6 +116,12 @@ const Dashboard = () => {
     return Math.round((completed / task.subTasks.length) * 100);
   };
 
+  const formatDuration = (decimalHours) => {
+    const h = Math.floor(decimalHours);
+    const m = Math.round((decimalHours - h) * 60);
+    return `${h}:${m.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200 overflow-hidden">
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
@@ -218,7 +224,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Study Hours</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{currentStats?.totalHours?.toFixed(1) || 0}h</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{currentStats ? formatDuration(currentStats.totalHours) : '0:00'}</p>
               </div>
             </div>
 
@@ -334,7 +340,7 @@ const Dashboard = () => {
                               <div className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-300">
                                 <Clock size={14} className="text-gray-400" />
                                 {task.startTime ? new Date(task.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                                <span className="text-gray-400 font-normal">({task.hours}h)</span>
+                                <span className="text-gray-400 font-normal">({formatDuration(task.hours)})</span>
                               </div>
                               <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded w-fit ${
                                 task.priority === 'URGENT' ? 'bg-red-100 text-red-600 dark:bg-red-900/40' :

@@ -70,10 +70,16 @@ const TaskForm = ({ onSubmit }) => {
       fullStartTime.setHours(parseInt(hoursPart), parseInt(minutesPart), 0, 0);
     }
 
+    let decimalHours = 0;
+    if (hours) {
+      const [h, m] = hours.split(':').map(Number);
+      decimalHours = h + (m / 60);
+    }
+
     onSubmit({ 
       date, 
       startTime: fullStartTime, 
-      hours: parseFloat(hours), 
+      hours: decimalHours, 
       category, 
       notes,
       isRoutine,
@@ -133,15 +139,12 @@ const TaskForm = ({ onSubmit }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Duration (Hours)</label>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Duration (HH:mm)</label>
             <input
-              type="number"
-              step="0.5"
-              min="0.5"
+              type="time"
               required
               value={hours}
               onChange={(e) => setHours(e.target.value)}
-              placeholder="2.5"
               className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all dark:bg-gray-700/50 dark:border-gray-600 dark:text-white"
             />
           </div>
