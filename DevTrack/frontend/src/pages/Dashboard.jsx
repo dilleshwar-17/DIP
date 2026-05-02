@@ -5,7 +5,8 @@ import TaskForm from '../components/TaskForm';
 import AnalyticsCharts from '../components/AnalyticsCharts';
 import KanbanBoard from '../components/KanbanBoard';
 import { aiAPI } from '../services/api';
-import { Clock, CheckCircle, TrendingUp, Trash2, LayoutGrid, Calendar as CalendarIcon, ChevronRight, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
+import NotificationService from '../services/NotificationService';
+import { Clock, CheckCircle, TrendingUp, Trash2, LayoutGrid, Calendar as CalendarIcon, ChevronRight, ChevronDown, Sparkles, Loader2, Bell } from 'lucide-react';
 
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
@@ -16,6 +17,15 @@ const Dashboard = () => {
   const [view, setView] = useState('timetable'); // timetable or kanban
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [expandedTasks, setExpandedTasks] = useState([]);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  useEffect(() => {
+    const initNotifications = async () => {
+      const granted = await NotificationService.requestPermission();
+      setNotificationsEnabled(granted);
+    };
+    initNotifications();
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -27,8 +37,12 @@ const Dashboard = () => {
         taskAPI.getTasks(selectedDate),
         taskAPI.getAnalytics()
       ]);
-      setTasks(tasksRes.data);
+      const fetchedTasks = tasksRes.data;
+      setTasks(fetchedTasks);
       setAnalytics(analyticsRes.data);
+      
+      // Schedule reminders for fetched tasks
+      NotificationService.scheduleAllReminders(fetchedTasks);
     } catch (error) {
       console.error('Failed to fetch data', error);
     }
@@ -128,6 +142,15 @@ const Dashboard = () => {
                   <LayoutGrid size={14} />
                   Kanban
                 </button>
+              </div>
+
+              <div className="flex items-center gap-2 px-2">
+                <div className={`p-1.5 rounded-lg ${notificationsEnabled ? 'text-green-600 bg-green-50 dark:bg-green-900/30' : 'text-gray-400 bg-gray-50 dark:bg-gray-700'}`}>
+                  <Bell size={16} />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-tight text-gray-500">
+                  {notificationsEnabled ? 'Reminders Active' : 'Notifications Off'}
+                </span>
               </div>
 
               <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
