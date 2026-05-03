@@ -26,6 +26,8 @@ const Dashboard = () => {
   const [dailyTip, setDailyTip] = useState('');
   const [scheduleOptimization, setScheduleOptimization] = useState('');
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   useEffect(() => {
     const init = async () => {
