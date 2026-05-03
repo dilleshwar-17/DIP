@@ -30,6 +30,8 @@ export const taskAPI = {
 export const aiAPI = {
   suggestSubTasks: (title, category) => api.post('/ai/suggest-subtasks', { title, category }),
   getInsights: (stats) => api.post('/ai/insights', { stats }),
+  parseTask: (text) => api.post('/ai/parse-task', { text }),
 };
+
 
 export default api;

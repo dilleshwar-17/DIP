@@ -6,7 +6,7 @@ import AnalyticsCharts from '../components/AnalyticsCharts';
 import KanbanBoard from '../components/KanbanBoard';
 import { aiAPI } from '../services/api';
 import NotificationService from '../services/NotificationService';
-import { Clock, CheckCircle, TrendingUp, Trash2, LayoutGrid, Calendar as CalendarIcon, ChevronRight, ChevronDown, Sparkles, Loader2, Bell, Activity, Edit2 } from 'lucide-react';
+import { Clock, CheckCircle, TrendingUp, Trash2, LayoutGrid, Calendar as CalendarIcon, ChevronRight, ChevronDown, Sparkles, Loader2, Bell, Activity, Edit2, Mic, MicOff } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 const STATUS_ORDER = ['PENDING', 'IN_PROGRESS', 'REVIEW', 'COMPLETED'];
@@ -23,13 +23,33 @@ const Dashboard = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState('');
 
   useEffect(() => {
-    const initNotifications = async () => {
-      const granted = await NotificationService.requestPermission();
-      setNotificationsEnabled(granted);
+    const checkPerms = async () => {
+      const status = await NotificationService.checkPermission();
+      setNotificationsEnabled(status === 'granted');
     };
-    initNotifications();
+    checkPerms();
+
+    // Sync on focus
+    const handleFocus = () => {
+      console.log('App focused, syncing data...');
+      fetchData();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Periodic sync (every 60 seconds)
+    const interval = setInterval(() => {
+      console.log('Periodic sync...');
+      fetchData();
+    }, 60000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
@@ -114,6 +134,65 @@ const Dashboard = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleVoiceCommand = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Voice commands are not supported in your browser.");
+      return;
+    }
+
+    if (isRecording) {
+      setIsRecording(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+      setVoiceStatus('Listening...');
+    };
+
+    recognition.onresult = async (event) => {
+      const text = event.results[0][0].transcript;
+      setVoiceStatus(`Parsing: "${text}"`);
+      
+      try {
+        const res = await aiAPI.parseTask(text);
+        const taskData = res.data;
+        
+        // Map the AI response to the actual task creation
+        await taskAPI.createTask({
+          ...taskData,
+          date: taskData.date || new Date().toISOString().split('T')[0],
+          status: 'PENDING'
+        });
+        
+        fetchData();
+        setVoiceStatus('Task added successfully!');
+        setTimeout(() => setVoiceStatus(''), 3000);
+      } catch (error) {
+        console.error('Failed to parse voice command', error);
+        setVoiceStatus('Failed to understand command.');
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error', event.error);
+      setIsRecording(false);
+      setVoiceStatus('');
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognition.start();
+  };
+
   const handleToggleSubTask = async (task, subTaskId) => {
     // Optimistic Update
     const oldTasks = [...tasks];
@@ -194,29 +273,41 @@ const Dashboard = () => {
                 </div>
 
                 <div className="flex items-center gap-3 px-2">
-                  <div className="p-1.5 rounded-lg text-green-600 bg-green-50 dark:bg-green-900/30">
+                  <div className={`p-1.5 rounded-lg ${notificationsEnabled ? 'text-green-600 bg-green-50 dark:bg-green-900/30' : 'text-amber-600 bg-amber-50 dark:bg-amber-900/30'}`}>
                     <Bell size={16} />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold uppercase tracking-tight text-gray-500">
-                      Reminders Active
+                      {notificationsEnabled ? 'Reminders Active' : 'Notifications Off'}
                     </span>
-                    <button 
-                      onClick={() => {
-                        const testTask = {
-                          id: 'test-id',
-                          category: 'Test System',
-                          notes: 'Notification scheduling is working correctly!',
-                          startTime: new Date(Date.now() + 5 * 60 * 1000 + 5000).toISOString(), // 5 mins (reminder offset) + 5 seconds
-                          status: 'PENDING'
-                        };
-                        NotificationService.scheduleTaskReminder(testTask);
-                        alert('Test notification scheduled for 5 seconds from now. You can minimize the window to test background support.');
-                      }}
-                      className="text-[9px] font-bold text-blue-600 hover:underline text-left"
-                    >
-                      Test Scheduling
-                    </button>
+                    {!notificationsEnabled ? (
+                      <button 
+                        onClick={async () => {
+                          const granted = await NotificationService.requestPermission();
+                          setNotificationsEnabled(granted);
+                        }}
+                        className="text-[9px] font-bold text-blue-600 hover:underline text-left"
+                      >
+                        Enable Notifications
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => {
+                          const testTask = {
+                            id: 'test-' + Date.now(),
+                            category: 'Test Alert',
+                            notes: 'System is ready!',
+                            startTime: new Date(Date.now() + 6000).toISOString(), 
+                            status: 'PENDING'
+                          };
+                          NotificationService.scheduleTaskReminder(testTask);
+                          alert('Test scheduled for 6 seconds from now. Close the app to test background support.');
+                        }}
+                        className="text-[9px] font-bold text-blue-600 hover:underline text-left"
+                      >
+                        Test System
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -241,6 +332,23 @@ const Dashboard = () => {
                     <option value="monthly">Monthly</option>
                     <option value="overall">Overall</option>
                   </select>
+                </div>
+
+                <div className="h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
+
+                <div className="flex items-center gap-2 px-2">
+                  <button
+                    onClick={handleVoiceCommand}
+                    className={`p-2 rounded-full transition-all ${isRecording ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                    title="Voice Command"
+                  >
+                    {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
+                  </button>
+                  {voiceStatus && (
+                    <span className="text-[10px] font-bold text-blue-600 animate-fade-in truncate max-w-[100px]">
+                      {voiceStatus}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -299,9 +407,20 @@ const Dashboard = () => {
                   <Sparkles className="text-yellow-300" />
                   <h3 className="text-xl font-bold">AI Productivity Coach</h3>
                 </div>
-                <p className="text-indigo-100 text-sm leading-relaxed">
-                  {aiInsights || "Get personalized AI feedback on your performance and learn how to optimize your workflow."}
-                </p>
+                <div className="text-indigo-100 text-sm leading-relaxed">
+                  {aiInsights ? (
+                    <ul className="space-y-2">
+                      {aiInsights.split('\n').filter(line => line.trim()).map((line, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="text-yellow-300 shrink-0">•</span>
+                          <span>{line.replace(/^•\s*/, '')}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    "Get personalized AI feedback on your performance and learn how to optimize your workflow."
+                  )}
+                </div>
               </div>
               <button 
                 onClick={handleGetInsights}

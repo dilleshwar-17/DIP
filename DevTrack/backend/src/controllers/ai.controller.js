@@ -24,4 +24,18 @@ const getInsights = async (req, res) => {
   }
 };
 
-module.exports = { suggestSubTasks, getInsights };
+const parseTask = async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text) {
+      return res.status(400).json({ error: 'Text command is required' });
+    }
+    const taskData = await aiService.parseNaturalLanguageTask(text);
+    res.status(200).json(taskData);
+  } catch (error) {
+    console.error('AI Parse Controller Error:', error);
+    res.status(500).json({ error: 'Failed to parse task command' });
+  }
+};
+
+module.exports = { suggestSubTasks, getInsights, parseTask };

@@ -6,13 +6,27 @@ class NotificationService {
     this.scheduledTimeouts = new Map();
   }
 
-  async requestPermission() {
+  async checkPermission() {
     if (Capacitor.isNativePlatform()) {
-      const status = await LocalNotifications.requestPermissions();
-      return status.display === 'granted';
+      const status = await LocalNotifications.checkPermissions();
+      return status.display;
     } else if ('Notification' in window) {
-      const status = await Notification.requestPermission();
-      return status === 'granted';
+      return Notification.permission;
+    }
+    return 'denied';
+  }
+
+  async requestPermission() {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const status = await LocalNotifications.requestPermissions();
+        return status.display === 'granted';
+      } else if ('Notification' in window) {
+        const status = await Notification.requestPermission();
+        return status === 'granted';
+      }
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
     }
     return false;
   }
@@ -21,38 +35,49 @@ class NotificationService {
     if (!task.startTime || task.status === 'COMPLETED') return;
 
     const taskTime = new Date(task.startTime);
-    const reminderTime = new Date(taskTime.getTime() - 5 * 60 * 1000); // 5 minutes before
+    const now = new Date();
 
-    // If reminder time has already passed, don't schedule
-    if (reminderTime < new Date()) return;
+    // 1. Reminder: 5 minutes before
+    const reminderTime = new Date(taskTime.getTime() - 5 * 60 * 1000);
+    if (reminderTime > now) {
+      this._doSchedule(task.id + '_pre', `Upcoming: ${task.category}`, `Your task starts in 5 minutes.`, reminderTime);
+    }
 
-    const title = `Upcoming Task: ${task.category}`;
-    const body = task.notes ? `Reminder: ${task.notes}` : `Your task starts in 5 minutes.`;
+    // 2. Reminder: Exactly at start
+    if (taskTime > now) {
+      this._doSchedule(task.id + '_start', `Task Starting: ${task.category}`, `It's time to start: ${task.category}`, taskTime);
+    }
+  }
 
+  async _doSchedule(id, title, body, date) {
     if (Capacitor.isNativePlatform()) {
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            title,
-            body,
-            id: task.id.split('-').reduce((acc, char) => acc + char.charCodeAt(0), 0),
-            schedule: { at: reminderTime },
-            sound: 'default',
-          },
-        ],
-      });
+      try {
+        // Convert string ID to numeric for Capacitor (must be 32-bit int)
+        const numericId = Math.abs(id.split('').reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)) | 0;
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title,
+              body,
+              id: numericId,
+              schedule: { at: date },
+              sound: 'default',
+              extra: { originalId: id }
+            },
+          ],
+        });
+      } catch (error) {
+        console.error('Failed to schedule native notification:', error);
+      }
     } else if ('Notification' in window && Notification.permission === 'granted') {
-      const timeout = reminderTime.getTime() - Date.now();
+      const timeout = date.getTime() - Date.now();
       
-      // Clear existing timeout for this task if any
-      if (this.scheduledTimeouts.has(task.id)) {
-        clearTimeout(this.scheduledTimeouts.get(task.id));
+      if (this.scheduledTimeouts.has(id)) {
+        clearTimeout(this.scheduledTimeouts.get(id));
       }
 
-      // Ensure timeout is positive and reasonable (within 24 hours)
-      if (timeout > 0 && timeout < 24 * 60 * 60 * 1000) {
+      if (timeout > 0 && timeout < 48 * 60 * 60 * 1000) { 
         const timeoutId = setTimeout(async () => {
-          // Use Service Worker for better background support if available
           if ('serviceWorker' in navigator) {
             const registration = await navigator.serviceWorker.ready;
             registration.showNotification(title, {
@@ -60,33 +85,30 @@ class NotificationService {
               icon: '/logo192.png',
               badge: '/logo192.png',
               vibrate: [200, 100, 200],
-              tag: task.id // Avoid duplicate notifications
+              tag: id
             });
           } else {
             new Notification(title, { body, icon: '/logo192.png' });
           }
-          this.scheduledTimeouts.delete(task.id);
+          this.scheduledTimeouts.delete(id);
         }, timeout);
         
-        this.scheduledTimeouts.set(task.id, timeoutId);
+        this.scheduledTimeouts.set(id, timeoutId);
       }
     }
   }
 
   async scheduleAllReminders(tasks) {
-    // 1. Handle Native Platform
     if (Capacitor.isNativePlatform()) {
       const pending = await LocalNotifications.getPending();
       if (pending.notifications.length > 0) {
         await LocalNotifications.cancel(pending);
       }
     } else {
-      // 2. Handle Web Platform: Clear all existing timeouts
       this.scheduledTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
       this.scheduledTimeouts.clear();
     }
 
-    // 3. Schedule for all tasks
     tasks.forEach(task => {
       this.scheduleTaskReminder(task);
     });

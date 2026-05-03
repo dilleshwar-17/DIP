@@ -59,10 +59,10 @@ const getProductivityInsights = async (stats) => {
   try {
     if (!process.env.SAMBANOVA_API_KEY) return "AI insights are currently unavailable. Please configure SAMBANOVA_API_KEY.";
 
-    const prompt = `Analyze these productivity stats: ${JSON.stringify(stats)}. Provide 3 brief, high-impact recommendations to improve efficiency. Keep it motivating and professional.`;
+    const prompt = `Analyze these productivity stats: ${JSON.stringify(stats)}. Provide 3 brief, high-impact recommendations to improve efficiency. Return ONLY 3 bullet points starting with '•'. Keep it motivating and professional.`;
 
     const content = await callSambaNova([
-      { role: "system", content: "You are a motivational productivity coach." },
+      { role: "system", content: "You are a motivational productivity coach. You respond only with bullet points." },
       { role: "user", content: prompt }
     ]);
 
@@ -73,5 +73,36 @@ const getProductivityInsights = async (stats) => {
   }
 };
 
-module.exports = { suggestSubTasks, getProductivityInsights };
+const parseNaturalLanguageTask = async (text) => {
+  try {
+    const now = new Date();
+    const prompt = `Convert the following natural language task request into a structured JSON object.
+Text: "${text}"
+Reference Current Time: ${now.toISOString()}
+
+The output must be a JSON object with the following fields:
+- category: (string, e.g., 'DSA', 'Revision', 'Meeting')
+- date: (string, YYYY-MM-DD)
+- startTime: (string, ISO 8601 datetime)
+- hours: (number, duration in decimal hours)
+- notes: (string)
+- priority: (string: 'URGENT', 'HIGH', 'MEDIUM', 'LOW')
+
+Return ONLY the JSON.`;
+
+    const content = await callSambaNova([
+      { role: "system", content: "You are a precise task parser that only outputs JSON." },
+      { role: "user", content: prompt }
+    ]);
+
+    const jsonStr = content.replace(/```json|```/g, "").trim();
+    return JSON.parse(jsonStr);
+  } catch (error) {
+    console.error("Natural Language Parsing Error:", error);
+    throw error;
+  }
+};
+
+module.exports = { suggestSubTasks, getProductivityInsights, parseNaturalLanguageTask };
+
 
