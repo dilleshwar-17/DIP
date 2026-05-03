@@ -7,6 +7,7 @@ const TaskForm = ({ onSubmit, editingTask, onCancelEdit }) => {
   const [startTime, setStartTime] = useState('');
   const [hours, setHours] = useState('');
   const [category, setCategory] = useState('DSA');
+  const [customCategory, setCustomCategory] = useState('');
   const [notes, setNotes] = useState('');
   const [isRoutine, setIsRoutine] = useState(false);
   const [priority, setPriority] = useState('MEDIUM');
@@ -114,7 +115,7 @@ const TaskForm = ({ onSubmit, editingTask, onCancelEdit }) => {
       date, 
       startTime: fullStartTime, 
       hours: decimalHours, 
-      category, 
+      category: category === 'Other' && customCategory ? customCategory : category, 
       notes,
       isRoutine,
       priority,
@@ -135,9 +136,9 @@ const TaskForm = ({ onSubmit, editingTask, onCancelEdit }) => {
   };
 
   return (
-    <div className="rounded-2xl bg-white p-8 shadow-xl border border-gray-100 dark:bg-gray-800 dark:border-gray-700 mb-8 transition-all hover:shadow-2xl">
+    <div className="glass-card p-8 mb-8">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+        <div className="p-2 bg-blue-100/50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
           <ListTodo size={24} />
         </div>
         <h3 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -180,7 +181,7 @@ const TaskForm = ({ onSubmit, editingTask, onCancelEdit }) => {
             />
           </div>
 
-          <div>
+          <div className={category === 'Other' ? 'col-span-1' : ''}>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Category</label>
             <select
               value={category}
@@ -193,9 +194,23 @@ const TaskForm = ({ onSubmit, editingTask, onCancelEdit }) => {
               <option value="Work">Work</option>
               <option value="Personal">Personal</option>
               <option value="Health">Health</option>
-              <option value="Other">Other</option>
+              <option value="Other">Other (Custom)</option>
             </select>
           </div>
+
+          {category === 'Other' && (
+            <div className="animate-in fade-in slide-in-from-left-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Custom Category</label>
+              <input
+                type="text"
+                required
+                placeholder="Enter category name..."
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all dark:bg-gray-700/50 dark:border-gray-600 dark:text-white"
+              />
+            </div>
+          )}
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

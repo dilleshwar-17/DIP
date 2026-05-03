@@ -20,18 +20,24 @@ const Dashboard = () => {
   const [view, setView] = useState('timetable'); // timetable or kanban
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [expandedTasks, setExpandedTasks] = useState([]);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState('');
+  const [dailyTip, setDailyTip] = useState('');
+  const [scheduleOptimization, setScheduleOptimization] = useState('');
+  const [isOptimizing, setIsOptimizing] = useState(false);
 
   useEffect(() => {
-    const checkPerms = async () => {
+    const init = async () => {
       const status = await NotificationService.checkPermission();
       setNotificationsEnabled(status === 'granted');
+      
+      try {
+        const res = await aiAPI.getMotivation();
+        setDailyTip(res.data.tip);
+      } catch (e) {}
     };
-    checkPerms();
+    init();
 
     // Sync on focus
     const handleFocus = () => {
@@ -134,6 +140,18 @@ const Dashboard = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleOptimizeSchedule = async () => {
+    setIsOptimizing(true);
+    try {
+      const res = await aiAPI.optimizeSchedule(tasks, timeframe);
+      setScheduleOptimization(res.data.suggestions);
+    } catch (error) {
+      console.error('Optimization failed', error);
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
   const handleVoiceCommand = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -229,7 +247,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200 overflow-hidden relative">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(59,130,246,0.1),transparent)] pointer-events-none"></div>
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       
       <main className="flex-1 overflow-y-auto">
@@ -248,24 +267,28 @@ const Dashboard = () => {
               </button>
             </div>
 
-            <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight">Dashboard</h2>
-                <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">Personalized productivity management suite.</p>
-              </div>
+              <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight">Dashboard</h2>
+                  {dailyTip && (
+                    <p className="mt-1 text-sm font-medium text-blue-600 dark:text-blue-400 animate-in fade-in slide-in-from-bottom-2">
+                      “{dailyTip}”
+                    </p>
+                  )}
+                </div>
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 glass p-2 rounded-2xl shadow-lg border border-white/20">
+                <div className="flex bg-gray-100/50 dark:bg-gray-800/50 rounded-xl p-1 backdrop-blur-sm">
                   <button 
                     onClick={() => setView('timetable')}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${view === 'timetable' ? 'bg-white dark:bg-gray-600 text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'timetable' ? 'bg-white dark:bg-gray-700 text-blue-600 shadow-sm' : 'text-gray-500'}`}
                   >
                     <CalendarIcon size={14} />
                     Timetable
                   </button>
                   <button 
                     onClick={() => setView('kanban')}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${view === 'kanban' ? 'bg-white dark:bg-gray-600 text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'kanban' ? 'bg-white dark:bg-gray-700 text-blue-600 shadow-sm' : 'text-gray-500'}`}
                   >
                     <LayoutGrid size={14} />
                     Kanban
@@ -314,7 +337,7 @@ const Dashboard = () => {
                 <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
 
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 glass px-3 py-1.5 rounded-xl border border-white/10">
                     <input
                       type="date"
                       value={selectedDate}
@@ -322,16 +345,18 @@ const Dashboard = () => {
                       className="border-none bg-transparent text-sm font-bold text-gray-900 dark:text-white focus:ring-0 cursor-pointer"
                     />
                   </div>
-                  <select
-                    value={timeframe}
-                    onChange={(e) => setTimeframe(e.target.value)}
-                    className="bg-transparent border-none text-xs font-bold text-blue-600 dark:text-blue-400 focus:ring-0 cursor-pointer"
-                  >
-                    <option value="weekly">Weekly</option>
-                    <option value="fortnightly">Fortnightly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="overall">Overall</option>
-                  </select>
+                  <div className="glass px-3 py-1.5 rounded-xl border border-white/10">
+                    <select
+                      value={timeframe}
+                      onChange={(e) => setTimeframe(e.target.value)}
+                      className="bg-transparent border-none text-xs font-bold text-blue-600 dark:text-blue-400 focus:ring-0 cursor-pointer"
+                    >
+                      <option value="weekly">Weekly</option>
+                      <option value="fortnightly">Fortnightly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="overall">Overall</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
@@ -359,8 +384,8 @@ const Dashboard = () => {
 
           {/* Stats Cards */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-gray-100 flex items-center gap-4 dark:bg-gray-800 dark:border-gray-700 hover:shadow-md transition-all">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 group-hover:scale-110 transition-transform">
+            <div className="glass-card p-6 flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100/50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 group-hover:scale-110 transition-transform">
                 <Clock size={24} />
               </div>
               <div>
@@ -369,8 +394,8 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-gray-100 flex items-center gap-4 dark:bg-gray-800 dark:border-gray-700 hover:shadow-md transition-all">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 group-hover:scale-110 transition-transform">
+            <div className="glass-card p-6 flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100/50 text-green-600 dark:bg-green-900/30 dark:text-green-400 group-hover:scale-110 transition-transform">
                 <CheckCircle size={24} />
               </div>
               <div>
@@ -379,8 +404,8 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-gray-100 flex items-center gap-4 dark:bg-gray-800 dark:border-gray-700 hover:shadow-md transition-all">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 group-hover:scale-110 transition-transform">
+            <div className="glass-card p-6 flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100/50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 group-hover:scale-110 transition-transform">
                 <TrendingUp size={24} />
               </div>
               <div>
@@ -400,14 +425,19 @@ const Dashboard = () => {
             <AnalyticsCharts data={currentStats} title={timeframe.charAt(0).toUpperCase() + timeframe.slice(1)} />
           </div>
 
-          <div className="mb-8 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 p-8 shadow-xl text-white">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <Sparkles className="text-yellow-300" />
-                  <h3 className="text-xl font-bold">AI Productivity Coach</h3>
+          <div className="grid gap-6 lg:grid-cols-2 mb-8">
+            <div className="glass-card p-8 text-white bg-gradient-to-br from-indigo-600/90 to-purple-700/90 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Sparkles size={120} />
+              </div>
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                    <Sparkles className="text-yellow-300" />
+                  </div>
+                  <h3 className="text-xl font-bold">Productivity Coach</h3>
                 </div>
-                <div className="text-indigo-100 text-sm leading-relaxed">
+                <div className="text-indigo-50 text-sm leading-relaxed mb-6 min-h-[80px]">
                   {aiInsights ? (
                     <ul className="space-y-2">
                       {aiInsights.split('\n').filter(line => line.trim()).map((line, i) => (
@@ -421,15 +451,51 @@ const Dashboard = () => {
                     "Get personalized AI feedback on your performance and learn how to optimize your workflow."
                   )}
                 </div>
+                <button 
+                  onClick={handleGetInsights}
+                  disabled={isLoadingInsights}
+                  className="w-full flex items-center justify-center gap-2 bg-white text-indigo-700 px-6 py-3 rounded-xl font-bold text-sm shadow-lg hover:bg-indigo-50 transition-all disabled:opacity-50 active:scale-95"
+                >
+                  {isLoadingInsights ? <Loader2 className="animate-spin" size={18} /> : <TrendingUp size={18} />}
+                  {aiInsights ? 'Refresh Analysis' : 'Get Analysis'}
+                </button>
               </div>
-              <button 
-                onClick={handleGetInsights}
-                disabled={isLoadingInsights}
-                className="flex-shrink-0 flex items-center gap-2 bg-white text-indigo-700 px-6 py-3 rounded-xl font-bold text-sm shadow-lg hover:bg-indigo-50 transition-all disabled:opacity-50"
-              >
-                {isLoadingInsights ? <Loader2 className="animate-spin" size={18} /> : <TrendingUp size={18} />}
-                {aiInsights ? 'Refresh Analysis' : 'Get AI Feedback'}
-              </button>
+            </div>
+
+            <div className="glass-card p-8 text-white bg-gradient-to-br from-blue-600/90 to-cyan-700/90 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Activity size={120} />
+              </div>
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
+                    <Activity className="text-cyan-300" />
+                  </div>
+                  <h3 className="text-xl font-bold">Schedule Optimizer</h3>
+                </div>
+                <div className="text-cyan-50 text-sm leading-relaxed mb-6 min-h-[80px]">
+                  {scheduleOptimization ? (
+                    <ul className="space-y-2">
+                      {scheduleOptimization.split('\n').filter(line => line.trim()).map((line, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="text-cyan-300 shrink-0">•</span>
+                          <span>{line.replace(/^•\s*/, '')}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    "Let AI analyze your timetable and suggest improvements for better time management."
+                  )}
+                </div>
+                <button 
+                  onClick={handleOptimizeSchedule}
+                  disabled={isOptimizing}
+                  className="w-full flex items-center justify-center gap-2 bg-white text-cyan-700 px-6 py-3 rounded-xl font-bold text-sm shadow-lg hover:bg-cyan-50 transition-all disabled:opacity-50 active:scale-95"
+                >
+                  {isOptimizing ? <Loader2 className="animate-spin" size={18} /> : <LayoutGrid size={18} />}
+                  {scheduleOptimization ? 'Re-optimize' : 'Optimize Schedule'}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -441,10 +507,10 @@ const Dashboard = () => {
               onEditTask={handleEditTask}
             />
           ) : (
-            <div className="rounded-2xl bg-white shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700 overflow-hidden">
-              <div className="p-4 md:p-6 border-b border-gray-50 dark:border-gray-700 flex justify-between items-center">
+            <div className="mb-8 glass-card overflow-hidden">
+              <div className="p-4 md:p-6 border-b border-white/10 dark:border-white/5 flex justify-between items-center">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Daily Timetable</h3>
-                <span className="px-3 py-1 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full text-[10px] font-black uppercase">
+                <span className="px-3 py-1 bg-blue-500/10 text-blue-700 dark:text-blue-400 rounded-full text-[10px] font-black uppercase">
                   {tasks.length} Tasks
                 </span>
               </div>
@@ -452,7 +518,7 @@ const Dashboard = () => {
               {/* Desktop Table View */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left">
-                  <thead className="bg-gray-50 dark:bg-gray-900/50 text-[10px] uppercase font-bold text-gray-400 tracking-widest">
+                  <thead className="bg-gray-50/50 dark:bg-gray-900/30 text-[10px] uppercase font-bold text-gray-400 tracking-widest">
                     <tr>
                       <th className="px-6 py-4">Status</th>
                       <th className="px-6 py-4">Task Details</th>

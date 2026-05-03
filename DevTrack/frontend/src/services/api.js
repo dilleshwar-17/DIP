@@ -31,7 +31,11 @@ export const aiAPI = {
   suggestSubTasks: (title, category) => api.post('/ai/suggest-subtasks', { title, category }),
   getInsights: (stats) => api.post('/ai/insights', { stats }),
   parseTask: (text) => api.post('/ai/parse-task', { text }),
+  getMotivation: () => api.get('/ai/motivation'),
+  getSmartPriority: (title, notes) => api.post('/ai/smart-priority', { title, notes }),
+  optimizeSchedule: (tasks, timeframe) => api.post('/ai/optimize-schedule', { tasks, timeframe }),
 };
+
 
 
 export default api;

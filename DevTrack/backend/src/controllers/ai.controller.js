@@ -38,4 +38,33 @@ const parseTask = async (req, res) => {
   }
 };
 
-module.exports = { suggestSubTasks, getInsights, parseTask };
+const getDailyMotivation = async (req, res) => {
+  try {
+    const tip = await aiService.getDailyMotivation();
+    res.status(200).json({ tip });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get motivation' });
+  }
+};
+
+const getSmartPriority = async (req, res) => {
+  try {
+    const { title, notes } = req.body;
+    const priority = await aiService.getSmartPriority(title, notes);
+    res.status(200).json({ priority });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get smart priority' });
+  }
+};
+
+const optimizeSchedule = async (req, res) => {
+  try {
+    const { tasks, timeframe } = req.body;
+    const suggestions = await aiService.optimizeSchedule(tasks, timeframe);
+    res.status(200).json({ suggestions });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to optimize schedule' });
+  }
+};
+
+module.exports = { suggestSubTasks, getInsights, parseTask, getDailyMotivation, getSmartPriority, optimizeSchedule };

@@ -103,6 +103,50 @@ Return ONLY the JSON.`;
   }
 };
 
-module.exports = { suggestSubTasks, getProductivityInsights, parseNaturalLanguageTask };
+const getDailyMotivation = async () => {
+  try {
+    const prompt = "Provide a single, powerful, and unique productivity tip or motivational quote for a software developer. Keep it under 20 words.";
+    const content = await callSambaNova([
+      { role: "system", content: "You are a world-class performance coach." },
+      { role: "user", content: prompt }
+    ]);
+    return content;
+  } catch (error) {
+    return "Focus on progress, not perfection.";
+  }
+};
+
+const getSmartPriority = async (taskTitle, notes) => {
+  try {
+    const prompt = `Task: "${taskTitle}". Notes: "${notes}". 
+Based on this, suggest a priority level: URGENT, HIGH, MEDIUM, or LOW. 
+Return ONLY the priority word.`;
+    const content = await callSambaNova([
+      { role: "system", content: "You are a logic-based task classifier." },
+      { role: "user", content: prompt }
+    ]);
+    return content.trim().toUpperCase();
+  } catch (error) {
+    return "MEDIUM";
+  }
+};
+
+const optimizeSchedule = async (tasks, timeframe) => {
+  try {
+    const prompt = `Current tasks: ${JSON.stringify(tasks)}. 
+Analyze the distribution and suggest 2-3 specific time-management improvements (e.g., 'Move your DSA practice to 10 AM when focus is higher'). 
+Keep it concise and actionable. Return as bullet points.`;
+    const content = await callSambaNova([
+      { role: "system", content: "You are a time-management expert." },
+      { role: "user", content: prompt }
+    ]);
+    return content;
+  } catch (error) {
+    return "Maintain a consistent schedule for better focus.";
+  }
+};
+
+module.exports = { suggestSubTasks, getProductivityInsights, parseNaturalLanguageTask, getDailyMotivation, getSmartPriority, optimizeSchedule };
+
 
 
