@@ -26,18 +26,36 @@
 }
 
 @layer components {
+  /* Glassmorphism base */
   .glass {
-    @apply backdrop-blur-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[var(--glass-shadow)];
-  }
-  
-  .glass-card {
-    @apply glass rounded-2xl transition-all duration-300 hover:shadow-2xl hover:scale-[1.01];
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background-color: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
   }
 
+  /* Glass card — all utilities expanded inline (no custom class @apply) */
+  .glass-card {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background-color: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    @apply rounded-2xl transition-all duration-300 hover:shadow-2xl hover:scale-[1.01];
+  }
+
+  /* Glass input — all utilities expanded inline */
   .glass-input {
-    @apply glass-card px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/30 outline-none;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background-color: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    @apply rounded-2xl transition-all duration-300 px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/30 outline-none;
   }
 }
+
 
 @layer base {
   /* Custom Scrollbar */
